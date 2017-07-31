@@ -4,12 +4,8 @@
 #The README that explains the analysis files is clear and understandable.
 #The work submitted for this project is the work of the student who submitted it.
 
-
+library(data.table)
 #Merges the training and the test sets to create one data set.
-#Extracts only the measurements on the mean and standard deviation for each measurement.
-#Uses descriptive activity names to name the activities in the data set
-#Appropriately labels the data set with descriptive variable names.
-#From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
 
 
 test <- list.files("./UCI HAR Dataset/test")
@@ -20,12 +16,34 @@ test.f
 train <- list.files("./UCI HAR Dataset/train")
 train.f <- list.files("./UCI HAR Dataset/train/Inertial Signals")
 train.f
-pathtest <- "./UCI HAR Dataset/test/Inertial Signals"
-pathtrain <- "./UCI HAR Dataset/train/Inertial Signals"
-
+pathtest <- "./UCI HAR Dataset/test/Inertial Signals/"
+pathtrain <- "./UCI HAR Dataset/train/Inertial Signals/"
+#preparing the data names to be merged
+merge.data.names <- gsub("train.txt","",train.f)
+#getting the names for mean and standard deviation
+mean_sd <- paste(merge.data.names,"mean_sd",sep=".")
+#function to get the mean and sd
+demand <- function(x){
+  m     <- mean(x,na.rm=T)
+  sigma <- sd(x,na.rm=T)
+  all <- c(m,sigma)
+  all
+  }
+#length 9 - therefore can loop together
+length(test.f)==length(train.f)
+#create empty data data fram to add merged data
+Data <- data.table(Var2 = "tobedeleted", key = "Var2")
+#looping to extract the data and bind the data together
 for (i in 1:length(train.f)){
-  assign(train.f[i], data.table(read.table(paste(pathtrain,train.f[i],sep="/"))))
+  assign(train.f[i], data.table(read.table(paste(pathtrain,train.f[i],sep=""),stringsAsFactors = F)))
+  assign(test.f[i], data.table(read.table(paste(pathtest,test.f[i],sep=""),stringsAsFactors =F)))
+  assign(merge.data.names[i], rbind(get(train.f[i]),get(test.f[i])))
+  assign(mean_sd[i], setkey(data.table(melt(get(merge.data.names[i])[,sapply(.SD,demand)])),Var2,Var1))
+  Data<-merge(Data,get(mean_sd[i]),all.y=T)
 }
 
-body_acc_x_train.txt
-?read.table
+
+#Extracts only the measurements on the mean and standard deviation for each measurement.
+#Uses descriptive activity names to name the activities in the data set
+#Appropriately labels the data set with descriptive variable names.
+#From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
